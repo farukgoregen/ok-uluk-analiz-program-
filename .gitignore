@@ -1,0 +1,15 @@
+bin/
+obj/
+.vs/
+*.user
+
+# Büyük medya ve yüklenen videolar
+Archery.Web/uploads/
+*.mp4
+*.zip
+
+# API anahtarı içerir, repoya girmemeli
+opencode.json
+
+# Çıktı dökümleri
+test_output*.json

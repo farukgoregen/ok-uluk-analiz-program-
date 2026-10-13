@@ -1,0 +1,227 @@
+@page
+@model Archery.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "Ana Sayfa";
+}
+
+<!-- 1. VİDEO YÜKLEME -->
+<section id="uploadSection" class="view view-upload" aria-labelledby="uploadTitle">
+    <div class="upload-layout">
+        <div class="card card-paper upload-card">
+            <p class="eyebrow">Yeni analiz</p>
+            <h1 id="uploadTitle" class="page-title">Atış videonu yükle</h1>
+            <p class="lead">Videoyu yükle; sistem kolları, dirsek açılarını ve atışlarını analiz eder.</p>
+
+            <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-describedby="dropHint"
+                 aria-label="Video seç veya buraya sürükle">
+                <svg class="drop-icon" viewBox="0 0 64 64" aria-hidden="true">
+                    <path d="M20 8c16 10 16 38 0 48" />
+                    <path d="M20 8v48" class="accent-line" />
+                    <path d="M12 32h42m-8-6 8 6-8 6" />
+                </svg>
+                <p class="drop-title">Videoyu buraya sürükle veya seç</p>
+                <p id="dropHint" class="drop-hint">MP4, MOV ve tarayıcının açabildiği diğer video biçimleri</p>
+                <input type="file" id="videoFileInput" accept="video/*" class="visually-hidden" tabindex="-1" />
+            </div>
+
+            <div id="selectedFile" class="selected-file" hidden>
+                <video id="selectedPreview" class="selected-preview" muted playsinline preload="metadata" aria-hidden="true"></video>
+                <div class="selected-meta">
+                    <span id="selectedFileName" class="selected-name"></span>
+                    <span id="selectedFileSize" class="selected-size"></span>
+                </div>
+                <button type="button" id="btnRemoveFile" class="btn btn-icon" aria-label="Seçilen videoyu kaldır">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                </button>
+            </div>
+
+            <button type="button" id="btnStartAnalysis" class="btn btn-primary btn-lg btn-block" disabled>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1" /></svg>
+                Analizi Başlat
+            </button>
+        </div>
+
+        <aside class="card card-soft tips-card" aria-labelledby="tipsTitle">
+            <h2 id="tipsTitle" class="panel-title">Daha iyi analiz için</h2>
+            <ul class="tips">
+                <li>
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" /><circle cx="12" cy="9" r="2" /><path d="M12 11v5m-3-3h6" /></svg>
+                    <span>Okçuyu tamamen kadrajda tut.</span>
+                </li>
+                <li>
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h12m-4-4 4 4-4 4" /><rect x="16" y="6" width="5" height="12" rx="1.5" /></svg>
+                    <span>Mümkünse yandan çek.</span>
+                </li>
+                <li>
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="10" rx="2" /><path d="M12 14v6m-4 0h8" /></svg>
+                    <span>Kamera sabit olsun.</span>
+                </li>
+                <li>
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10 1.4 1.4M5.6 18.4 7 17m10-10 1.4-1.4" /></svg>
+                    <span>Işık yeterli olsun.</span>
+                </li>
+            </ul>
+        </aside>
+    </div>
+</section>
+
+<!-- 2. ANALİZ SÜRÜYOR / HATA -->
+<section id="processingSection" class="view view-processing" aria-live="polite" hidden>
+    <div class="card card-paper status-card">
+        <div id="processingBody">
+            <svg class="bow-loader" viewBox="0 0 120 120" aria-hidden="true">
+                <path class="bow-limb" d="M42 14c34 22 34 70 0 92" />
+                <path class="bow-string" d="M42 14 L42 106" />
+                <path class="bow-arrow" d="M30 60h68m-8-6 8 6-8 6" />
+            </svg>
+            <span id="processingBadge" class="badge badge-processing">İşleniyor</span>
+            <h1 class="page-title">Analiz sürüyor</h1>
+            <p class="lead">Video uzunluğuna göre işlem birkaç dakika sürebilir.</p>
+            <p id="processingFileName" class="muted file-line"></p>
+            <div class="indeterminate" role="progressbar" aria-label="Analiz sürüyor" aria-valuetext="İşleniyor"><span></span></div>
+        </div>
+        <div id="errorBody" hidden>
+            <svg class="status-icon status-icon-danger" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7.5v5.5M12 16.5v.01" /></svg>
+            <span class="badge badge-failed">Hata</span>
+            <h1 class="page-title">Analiz tamamlanamadı</h1>
+            <p id="errorMessage" class="lead"></p>
+            <div class="btn-row">
+                <button type="button" id="btnRetry" class="btn btn-primary">Tekrar dene</button>
+                <button type="button" id="btnErrorBack" class="btn btn-secondary">Başka video seç</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. ANALİZ SONUCU -->
+<section id="playerSection" class="view view-result" aria-labelledby="resultTitle" hidden>
+    <div class="result-head">
+        <div>
+            <p class="eyebrow">Analiz sonucu</p>
+            <h1 id="resultTitle" class="page-title result-title">—</h1>
+        </div>
+        <button type="button" id="btnClosePlayer" class="btn btn-secondary">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            Yeni video yükle
+        </button>
+    </div>
+
+    <dl id="summaryStrip" class="summary-strip" aria-label="Oturum özeti">
+        <div class="summary-item"><dt>Analiz tarihi</dt><dd id="sumDate">—</dd></div>
+        <div class="summary-item"><dt>Durum</dt><dd><span class="badge badge-completed">Tamamlandı</span></dd></div>
+        <div class="summary-item"><dt>FPS</dt><dd id="fpsDisplay">—</dd></div>
+        <div class="summary-item"><dt>Tespit edilen atış</dt><dd id="sumShots">—</dd></div>
+        <div class="summary-item"><dt><span class="dot dot-bow" aria-hidden="true"></span>Yay kolu ortalama benzerlik</dt><dd id="sumBowSim">—</dd></div>
+        <div class="summary-item"><dt><span class="dot dot-draw" aria-hidden="true"></span>Çekme kolu ortalama benzerlik</dt><dd id="sumDrawSim">—</dd></div>
+        <div class="summary-item"><dt>Ortalama atış süresi</dt><dd id="sumDuration">—</dd></div>
+    </dl>
+
+    <div class="result-grid">
+        <div class="result-main">
+            <div class="video-frame">
+                <div id="videoStage" class="video-stage">
+                    <video id="analysisVideo" playsinline preload="auto" aria-label="Analiz edilen atış videosu"></video>
+                    <canvas id="overlayCanvas" aria-hidden="true"></canvas>
+                    <div class="stage-badges" aria-live="off">
+                        <span id="noDataBow" class="stage-badge stage-badge-bow" hidden>Yay kolu · veri yok</span>
+                        <span id="noDataDraw" class="stage-badge stage-badge-draw" hidden>Çekme kolu · veri yok</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls card card-paper" role="group" aria-label="Oynatma kontrolleri">
+                <div class="controls-row">
+                    <button type="button" id="btnPlayPause" class="btn btn-primary btn-round" aria-label="Oynat">
+                        <svg class="icon icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" /></svg>
+                        <svg class="icon icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.5v13M15.5 5.5v13" /></svg>
+                    </button>
+                    <input type="range" id="seekBar" class="seek" min="0" max="0" step="0.01" value="0" aria-label="Video konumu" />
+                    <span class="time tabular" aria-live="off"><span id="timeCurrent">0:00</span> / <span id="timeTotal">0:00</span></span>
+                </div>
+                <div class="controls-row controls-row-wrap">
+                    <div class="speed-group" role="group" aria-label="Oynatma hızı">
+                        <button type="button" class="btn-speed" data-speed="0.25">0.25x</button>
+                        <button type="button" class="btn-speed" data-speed="0.5">0.5x</button>
+                        <button type="button" class="btn-speed active" data-speed="1" aria-pressed="true">1x</button>
+                        <button type="button" class="btn-speed" data-speed="1.5">1.5x</button>
+                        <button type="button" class="btn-speed" data-speed="2">2x</button>
+                    </div>
+                    <div class="slow-group">
+                        <button type="button" id="btnSlowToggle" class="toggle on" role="switch" aria-checked="true">
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                            <span>Atış anı analiz hızı</span>
+                        </button>
+                        <label class="visually-hidden" for="analysisSpeedSelect">Atış anı hızı</label>
+                        <select id="analysisSpeedSelect" class="select-sm">
+                            <option value="0.1" selected>0.1x</option>
+                            <option value="0.25">0.25x</option>
+                            <option value="0.5">0.5x</option>
+                            <option value="1">1x</option>
+                        </select>
+                        <span id="slowBadge" class="badge badge-brass" hidden>Atış analizi yavaşlatıldı</span>
+                    </div>
+                </div>
+            </div>
+
+            <p class="note">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 7.5v.01" /></svg>
+                Açılar kameranın gördüğü düzlem üzerinden hesaplanır. Okçu kameraya göre çapraz durursa değerler gerçek açıdan farklı görünebilir.
+            </p>
+        </div>
+
+        <div class="result-side">
+            <div class="gauges">
+                <div class="gauge-card card card-paper" data-arm="bow">
+                    <div class="gauge-head"><span class="dot dot-bow" aria-hidden="true"></span><span>Yay Kolu</span></div>
+                    <svg class="gauge" viewBox="0 0 100 58" aria-hidden="true">
+                        <path class="gauge-track" d="M10 50 A40 40 0 0 1 90 50" pathLength="180" />
+                        <path id="gaugeBowArc" class="gauge-value gauge-bow" d="M10 50 A40 40 0 0 1 90 50" pathLength="180" stroke-dasharray="0 180" />
+                    </svg>
+                    <div id="liveAngleBow" class="gauge-value-text tabular" aria-live="off">—</div>
+                    <div class="gauge-foot"><span>Dirsek açısı</span><span id="gaugeTimeBow" class="tabular">0.00 sn</span></div>
+                </div>
+                <div class="gauge-card card card-paper" data-arm="draw">
+                    <div class="gauge-head"><span class="dot dot-draw" aria-hidden="true"></span><span>Çekme Kolu</span></div>
+                    <svg class="gauge" viewBox="0 0 100 58" aria-hidden="true">
+                        <path class="gauge-track" d="M10 50 A40 40 0 0 1 90 50" pathLength="180" />
+                        <path id="gaugeDrawArc" class="gauge-value gauge-draw" d="M10 50 A40 40 0 0 1 90 50" pathLength="180" stroke-dasharray="0 180" />
+                    </svg>
+                    <div id="liveAngleDraw" class="gauge-value-text tabular" aria-live="off">—</div>
+                    <div class="gauge-foot"><span>Dirsek açısı</span><span id="gaugeTimeDraw" class="tabular">0.00 sn</span></div>
+                </div>
+            </div>
+
+            <div id="shotHistoryPanel" class="shot-panels">
+                <section class="shot-panel card card-paper" data-arm="bow" aria-labelledby="bowPanelTitle">
+                    <header class="shot-panel-head">
+                        <h2 id="bowPanelTitle" class="panel-title"><span class="dot dot-bow" aria-hidden="true"></span>Yay Kolu Atışları</h2>
+                        <span id="bowPanelCounter" class="panel-counter tabular"></span>
+                    </header>
+                    <div id="bowArmHistoryList" class="shot-list" role="list"></div>
+                </section>
+                <section class="shot-panel card card-paper" data-arm="draw" aria-labelledby="drawPanelTitle">
+                    <header class="shot-panel-head">
+                        <h2 id="drawPanelTitle" class="panel-title"><span class="dot dot-draw" aria-hidden="true"></span>Çekme Kolu Atışları</h2>
+                        <span id="drawPanelCounter" class="panel-counter tabular"></span>
+                    </header>
+                    <div id="drawArmHistoryList" class="shot-list" role="list"></div>
+                </section>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- GEÇMİŞ ANALİZLER -->
+<section id="historySection" class="history-section" aria-labelledby="historyTitle">
+    <div class="history-head">
+        <h2 id="historyTitle" class="section-title">Geçmiş analizler</h2>
+        <p class="muted small">Geçmiş analizler kalıcı olarak saklanmaz; sunucu yeniden başlatıldığında silinir.</p>
+    </div>
+    <div id="historyList" class="history-list">
+        <div class="muted small">Yükleniyor…</div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/app.js?v=12"></script>
+}
